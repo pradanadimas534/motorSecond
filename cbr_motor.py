@@ -97,29 +97,40 @@ class CBRMotor:
     # ===========================
     # 2. REUSE
     # ===========================
-    def reuse(self, retrieved_cases):
-        """Ambil case terbaik dari retrieve."""
-        return retrieved_cases.iloc[0]  # best case
+    def reuse(self, case):
+        # case harus Series → convert ke dict aman
+        if hasattr(case, "to_dict"):
+            return case.to_dict()
+
+    # jika bukan dict, bukan Series → ERROR
+        raise ValueError("Reuse menerima input yang bukan row motor.")
+
 
     # ===========================
     # 3. REVISE
     # ===========================
-    def revise(self, recommended_case, feedback, corrected_case=None):
-        """
-        Streamlit version:
-        - feedback True  → user setuju
-        - feedback False → gunakan corrected_case yang diberikan UI
-        """
-        if feedback:
-            return recommended_case
-        
-        # User memberikan revisi melalui UI
-        return corrected_case
+    def revise(self, case, accepted, corrected_case=None):
+        if accepted:
+            if isinstance(case, dict):
+                return case
+            if hasattr(case, "to_dict"):
+                return case.to_dict()
+            raise ValueError("Case harus berupa dictionary saat accepted=True")
+        else:
+            return corrected_case
+
+
 
     # ===========================
     # 4. RETAIN
     # ===========================
     def retain(self, case):
+
+        if not isinstance(case, dict):
+            raise ValueError(f"retain() menerima tipe yang salah: {type(case)}")
+
+        # sisanya tetap
+
         """Simpan case baru ke CSV"""
         case["transmisi_enc"] = self._encode(case["transmisi"], self.transmisi_categories, "transmisi")
         case["jenis_enc"] = self._encode(case["jenis"], self.jenis_categories, "jenis")
